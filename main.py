@@ -1,9 +1,11 @@
 import json
 
 def find_and_store_sequences(file_path):
+    # Magic for font start
     sequence = bytes.fromhex('C0688F6DF77F000020658F6DF77F0000A0658F6DF77F0000F0698F6DF77F')
     skip_bytes = 50
     character_endings = [
+        # These indicates something but I'm still not sure what
         bytes.fromhex('00000000000000000100010000000000'),
         bytes.fromhex('00000000000000000000010000000000'),
         bytes.fromhex('00000000000000000100000000000000'),
@@ -19,17 +21,19 @@ def find_and_store_sequences(file_path):
         start = 0
 
         while True:
-            start = content.find(sequence, start)
+            start = content.find(sequence, start) # Search fonts
             if start == -1:
                 break
 
             start += len(sequence) + skip_bytes
-            end = content.find(null_sequence, start)
+            end = content.find(null_sequence, start) # Find where font name ends (two nulls after name)
             if end == -1:
                 break
 
+            # Because font name encoded with Unicode 16LE we need to replace
+            # null bytes then decode as ascii
             font_name = content[start:end].replace(b'\x00', b'').decode('ascii', errors='ignore')
-            font_offset = start
+            font_offset = start # Set out starting position to first byte of font
 
             first_char_position = content.find(pattern_start, end)
             if first_char_position == -1:
@@ -38,25 +42,29 @@ def find_and_store_sequences(file_path):
                 continue
 
             charlist = []
-            char_position = 0
+            char_position = 0 # Keep track of char position
 
             while True:
+                # Get first char, then loop
                 character = content[first_char_position + char_position : first_char_position + char_position + 16]
+                # Get first char, trail. This should be in list "character_endings"
                 character_ending = content[first_char_position + char_position + 16 : first_char_position + char_position + 16 + 16]
 
+                # Check if char fits our rules
                 if character.startswith(pattern_start):
                     char_bytes = int.from_bytes(character, "little")
                     char_type = int.from_bytes(character[:4], "little")
                     charlist.append({
                         "char_bytes": char_bytes,
                         "char_type": char_type,
-                        "char_offset": char_position
+                        "char_offset": first_char_position + char_position # Save offset of the char
+                        # We will use this offset later to find the vector of the char
                     })
 
                 if character_ending not in character_endings:
-                    break  # End of characters
+                    break  # End of chars
 
-                char_position += 32  # Move to the next character
+                char_position += 32  # Move to the next char
 
             fonts.append({
                 "font_name": font_name,
