@@ -6,10 +6,10 @@ def find_and_store_sequences(file_path):
     skip_bytes = 50
     character_endings = [
         # These indicates something but I'm still not sure what
-        bytes.fromhex('00000000000000000100010000000000'),
-        bytes.fromhex('00000000000000000000010000000000'),
-        bytes.fromhex('00000000000000000100000000000000'),
-        bytes.fromhex('00000000000000000000000000000000')
+        bytes.fromhex('00000000000000000000000000000000'), # 0
+        bytes.fromhex('00000000000000000000010000000000'), # 1
+        bytes.fromhex('00000000000000000100000000000000'), # 2
+        bytes.fromhex('00000000000000000100010000000000')  # 3
     ]
     pattern_start = b'\x50\x00\x08\x6b'
     null_sequence = b'\x00\x00'
@@ -54,12 +54,20 @@ def find_and_store_sequences(file_path):
                 if character.startswith(pattern_start):
                     char_bytes = int.from_bytes(character, "little")
                     char_type = int.from_bytes(character[:4], "little")
-                    charlist.append({
-                        "char_bytes": char_bytes,
-                        "char_type": char_type,
-                        "char_offset": first_char_position + char_position # Save offset of the char
-                        # We will use this offset later to find the vector of the char
-                    })
+                    try:
+                        charlist.append({
+                            "char_bytes": char_bytes,
+                            "char_type": character_endings.index(character_ending), # Save which trailling bytes have
+                            "char_offset": first_char_position + char_position # Save offset of the char
+                            # We will use this offset later to find the vector of the char
+                        })
+                    except:
+                        charlist.append({
+                            "char_bytes": char_bytes,
+                            "char_type": -1, # If there is no trailling then save it as -1
+                            "char_offset": first_char_position + char_position # Save offset of the char
+                            # We will use this offset later to find the vector of the char
+                        })
 
                 if character_ending not in character_endings:
                     break  # End of chars
