@@ -47,26 +47,33 @@ def find_and_store_sequences(file_path):
             while True:
                 # Get first char, then loop
                 character = content[first_char_position + char_position : first_char_position + char_position + 16]
-                # Get first char, trail. This should be in list "character_endings"
+                # Get first char's, trail. This should be in list "character_endings"
                 character_ending = content[first_char_position + char_position + 16 : first_char_position + char_position + 16 + 16]
 
                 # Check if char fits our rules
                 if character.startswith(pattern_start):
                     char_bytes = int.from_bytes(character, "little")
-                    char_type = int.from_bytes(character[:4], "little")
+                    texture_offset_reverse = character[8 : 12]
+                    texture_offset = texture_offset_reverse[::-1]
                     try:
                         charlist.append({
                             "char_bytes": char_bytes,
                             "char_type": character_endings.index(character_ending), # Save which trailling bytes have
-                            "char_offset": first_char_position + char_position # Save offset of the char
-                            # We will use this offset later to find the vector of the char
+                            "char_offset": first_char_position + char_position, # Save offset of the char
+                            "texture_offset": first_char_position + int.from_bytes(texture_offset) + char_position + 32
+                            # Why we add 32, because texture offset starts from the end of the char
+
+                            ##############################
+                            # I don't know why but we have 8 bytes of overflow. This is an huge issue
+                            # I need to fix this, so for now texture offset doesn't work.
+                            ##############################
                         })
                     except:
                         charlist.append({
                             "char_bytes": char_bytes,
                             "char_type": -1, # If there is no trailling then save it as -1
-                            "char_offset": first_char_position + char_position # Save offset of the char
-                            # We will use this offset later to find the vector of the char
+                            "char_offset": first_char_position + char_position,
+                            "texture_offset": first_char_position + int.from_bytes(texture_offset) + char_position + 32
                         })
 
                 if character_ending not in character_endings:
