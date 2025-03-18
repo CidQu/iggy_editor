@@ -123,11 +123,3 @@ def parse_file(file_path):
         parsed_data["offsets"].append(offset_data)
         pos += 8
     return parsed_data
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    file_path = "iggy/deneme.iggy"  # Replace with the actual file path
-    parsed_result = parse_file(file_path)
-
-    # Print the parsed data (for demonstration/debugging)
-    print(parsed_result)

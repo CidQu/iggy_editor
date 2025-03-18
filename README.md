@@ -6,6 +6,7 @@
 *   **Version:** (unknown)
 *   **SWF:** Written in Unicode-16LE (location unknown)
 *   **File Start:** (unknown)
+*   **First Font Offset:** `0x30 + header_length + 0xC0`
 *   **Header Size:** 824 bytes.
 
 ## Font Hierarchy
