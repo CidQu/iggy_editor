@@ -1,5 +1,6 @@
 # IGGY Viewer
-(~Soon to be an editor~)
+(Soon to be an editor)
+**STILL WIP**
 
 ## Usage
 

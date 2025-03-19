@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from helpers.byteToHex import convert_bytes_to_hex
 from models.readChars import parse_file
 
 class FontViewerApp:
@@ -41,7 +42,7 @@ class FontViewerApp:
 
         # Canvas for drawing
         self.canvas = tk.Canvas(self.root, bg="white", width=400, height=300) # Adjust the size as needed
-        self.canvas.grid(row=2, column=0, columnspan=2, padx=5, pady=10)
+        self.canvas.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
 
         # Keybindings
         self.root.bind("<Right>", lambda event: self.next_character())
@@ -51,7 +52,7 @@ class FontViewerApp:
 
         # Status Bar (for showing current character/font info)
         self.status_bar = ttk.Label(self.root, text="", anchor="w")
-        self.status_bar.grid(row=3, column=0, columnspan=2, sticky="ew", padx=5)
+        self.status_bar.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5)
 
         # Set up keyboard commands label
         self.keyboard_commands = ttk.Label(self.root, text="Keyboard Commands:\n"
@@ -59,7 +60,7 @@ class FontViewerApp:
                                                     "left:  previous character\n"
                                                     "down:  next font\n"
                                                     "up: show/hide points and width")
-        self.keyboard_commands.grid(row=4, column=0, columnspan=2)
+        self.keyboard_commands.grid(row=5, column=0, columnspan=1)
 
     def load_font_data(self, event=None):
         if not self.fonts:
@@ -94,7 +95,7 @@ class FontViewerApp:
             # WIP
             ############################
 
-            self.status_bar.config(text=f"Font: {self.font_combo.get()}, Char: {self.current_char_index} (Index: {self.current_char_index} / {len(font['charList'])-1}) - Not implemented")
+            self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data["numChunks"]}")
             self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, text="Not implemented", fill="black")
             # a1, a2, a3, a4 = char_data['a1'], char_data['a2'], char_data['a3'], char_data['a4']
             
@@ -115,7 +116,7 @@ class FontViewerApp:
             # self.canvas.create_rectangle(x_min_scaled, y_min_scaled, x_min_scaled+width_scaled, y_min_scaled+height_scaled, outline="black")
             # self.status_bar.config(text=f"Font: {self.font_combo.get()}, Char: {self.current_char_index} (Index: {self.current_char_index} / {len(font['charList'])-1})")
         else:
-            self.status_bar.config(text=f"Font: {self.font_combo.get()}, Char: {self.current_char_index} (Index: {self.current_char_index} / {len(font['charList'])-1}) - No Points")
+            self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNo Points")
             self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, text="No Points", fill="black")
     def next_character(self):
         if self.current_char_index < len(self.fonts[self.current_font_index]['charList']) - 1:
