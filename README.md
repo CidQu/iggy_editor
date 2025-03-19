@@ -15,4 +15,4 @@ python main.py view <file_path>
 
 ## Detailed IGGY Font Format
 
-[Click here](https://github.com/CidQu/iggy_editor/iggy_file_format.md) to view iggy file format template, it is still under development.
+[Click here](https://github.com/CidQu/iggy_editor/blob/main/iggy_file_format.md) to view iggy file format template, it is still under development.
