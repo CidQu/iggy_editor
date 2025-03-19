@@ -99,32 +99,48 @@ class FontViewerApp:
         has_points = char_data['hasPoints']
 
         if has_points:
-            ############################
-            # WIP
-            ############################
-            # WIP
-            ############################
+            a1 = char_data.get('a1')
+            a2 = char_data.get('a2')
+            a3 = char_data.get('a3')
+            a4 = char_data.get('a4')
+            canvas_width = self.canvas.winfo_width()
+            canvas_height = self.canvas.winfo_height()
+
+            # Draw a boundary rectangle according to the normalized coordinate space
+            self.canvas.create_rectangle(0, 0, canvas_width, canvas_height, outline="gray")
+
+            # Draw each coordinate as a cross
+            for coord in char_data.get('coordinates', []):
+                # Map the coordinate to canvas pixels.
+                x_norm = coord['x']
+                y_norm = coord['y']
+                pixel_x = ((x_norm - a4) / (a3 - a4)) * canvas_width
+                pixel_y = ((a1 - y_norm) / (a1 - a2)) * canvas_height
+
+                # Determine color based on line_type.
+                if coord['line_type'] == 3:
+                    color = "red"
+                elif coord['line_type'] == 1:
+                    color = "blue"
+                else:
+                    color = "black"
+
+                cs = 5  # cross size in pixels
+                self.canvas.create_line(pixel_x-cs, pixel_y-cs, pixel_x+cs, pixel_y+cs, fill=color)
+                self.canvas.create_line(pixel_x-cs, pixel_y+cs, pixel_x+cs, pixel_y-cs, fill=color)
+
+                # If this coordinate is curved, draw its control point.
+                if coord['line_type'] == 3:
+                    curved_x = coord.get('curved_x')
+                    curved_y = coord.get('curved_y')
+                    if curved_x is not 0.0 and curved_y is not 0.0:
+                        pixel_cx = ((curved_x - a4) / (a3 - a4)) * canvas_width
+                        pixel_cy = ((a1 - curved_y) / (a1 - a2)) * canvas_height
+                        self.canvas.create_line(pixel_cx-cs, pixel_cy-cs, pixel_cx+cs, pixel_cy+cs, fill=color)
+                        self.canvas.create_line(pixel_cx-cs, pixel_cy+cs, pixel_cx+cs, pixel_cy-cs, fill=color)
 
             self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data['numChunks']}")
-            self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, text="Not implemented", fill="black")
-            # a1, a2, a3, a4 = char_data['a1'], char_data['a2'], char_data['a3'], char_data['a4']
-            
-            # scale_factor = 150
 
-            # x_min = min(a1, a3)
-            # y_min = min(a2, a4)
-            # x_max = max(a1, a3)
-            # y_max = max(a2, a4)
-
-            # width = x_max - x_min
-            # height = y_max - y_min
-            # x_min_scaled = (x_min) * scale_factor + 50 # offset for visiblity
-            # y_min_scaled = (y_min) * scale_factor + 50
-            # width_scaled = width * scale_factor
-            # height_scaled = height * scale_factor
-
-            # self.canvas.create_rectangle(x_min_scaled, y_min_scaled, x_min_scaled+width_scaled, y_min_scaled+height_scaled, outline="black")
-            # self.status_bar.config(text=f"Font: {self.font_combo.get()}, Char: {self.current_char_index} (Index: {self.current_char_index} / {len(font['charList'])-1})")
         else:
             self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNo Points")
             self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, text="No Points", fill="black")
