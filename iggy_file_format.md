@@ -79,4 +79,6 @@ This section describes the data found at the offset specified by `charOffset`.  
 ### How many coordinates for one char?
 `(char[i+1].vectorOffset - char[i].vectorOffset - 58) / 24`
 
+This must be equal to numChunks. Because numChunks in `char_offsets + 16 + 8` has 4 byte integer that literally tells how many coordinates are there. So using the formula on top and numChunks in file we can verify if we missed anything.
+
 Difference between next char’s and current char’s vector offsets, then minus 58 because we have 58 bytes of header in vector. Then divide that by 24 which in number of bytes each coordinate have. This equals to number of coordinate we have for one char.
