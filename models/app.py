@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from helpers.byteToHex import convert_bytes_to_hex
 from models.readChars import parse_file
+from tkinter import messagebox
 
 class FontViewerApp:
     def __init__(self, root, file_path):
@@ -35,9 +36,20 @@ class FontViewerApp:
         self.char_label = ttk.Label(self.root, text="Char:")
         self.char_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
 
-        self.char_combo = ttk.Combobox(self.root, state="readonly")
-        self.char_combo.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
-        self.char_combo.bind("<<ComboboxSelected>>", self.draw_character)
+        self.char_frame = ttk.Frame(self.root)
+        self.char_frame.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+
+        self.char_decrement = ttk.Button(self.char_frame, text="-", command=self.previous_character)
+        self.char_decrement.grid(row=0, column=0)
+
+        self.char_var = tk.StringVar(value="0")
+        self.char_entry = ttk.Entry(self.char_frame, textvariable=self.char_var, width=5, justify="center")
+        self.char_entry.grid(row=0, column=1, padx=5)
+        self.char_entry.bind("<FocusOut>", lambda event: self.update_character(int(self.char_var.get())))
+        self.char_entry.bind("<Return>", lambda event: self.update_character(int(self.char_var.get())))
+
+        self.char_increment = ttk.Button(self.char_frame, text="+", command=self.next_character)
+        self.char_increment.grid(row=0, column=2)
 
 
         # Canvas for drawing
@@ -45,24 +57,24 @@ class FontViewerApp:
         self.canvas.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
 
         # Keybindings
-        self.root.bind("<Right>", lambda event: self.next_character())
-        self.root.bind("<Left>", lambda event: self.previous_character())
-        self.root.bind("<Down>", lambda event: self.next_font())
-        self.root.bind("<Up>", lambda event: self.previous_font())
+        self.root.bind("<Right>", lambda _: self.next_character())
+        self.root.bind("<Left>", lambda _: self.previous_character())
+        self.root.bind("<Down>", lambda _: self.next_font())
+        self.root.bind("<Up>", lambda _: self.previous_font())
 
         # Status Bar (for showing current character/font info)
         self.status_bar = ttk.Label(self.root, text="", anchor="w")
         self.status_bar.grid(row=2, column=0, columnspan=2, sticky="ew", padx=5)
 
         # Set up keyboard commands label
-        self.keyboard_commands = ttk.Label(self.root, text="Keyboard Commands:\n"
+        self.keyboard_commands = ttk.Label(self.root, text="\nKeyboard Commands:\n"
                                                     "right: next character\n"
                                                     "left:  previous character\n"
                                                     "down:  next font\n"
                                                     "up: show/hide points and width")
         self.keyboard_commands.grid(row=5, column=0, columnspan=1)
 
-    def load_font_data(self, event=None):
+    def load_font_data(self, _event=None):
         if not self.fonts:
             return
 
@@ -72,14 +84,12 @@ class FontViewerApp:
             self.font_combo.current(0)
 
         font = self.fonts[self.current_font_index]
-        self.char_combo["values"] = [i for i in range(font['numCharacters'])]
         if font['numCharacters'] > 0:
-          self.char_combo.current(0)
           self.current_char_index = 0
           self.draw_character()
 
-    def draw_character(self, event=None):
-        self.current_char_index = self.char_combo.current()
+    def draw_character(self, _event=None):
+        self.current_char_index = int(self.char_var.get())
         if self.current_char_index == -1:
             return
         
@@ -95,7 +105,7 @@ class FontViewerApp:
             # WIP
             ############################
 
-            self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data["numChunks"]}")
+            self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data['numChunks']}")
             self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, text="Not implemented", fill="black")
             # a1, a2, a3, a4 = char_data['a1'], char_data['a2'], char_data['a3'], char_data['a4']
             
@@ -121,14 +131,34 @@ class FontViewerApp:
     def next_character(self):
         if self.current_char_index < len(self.fonts[self.current_font_index]['charList']) - 1:
             self.current_char_index += 1
-            self.char_combo.current(self.current_char_index)
+            self.char_var.set(self.current_char_index)
             self.draw_character()
+        elif self.current_char_index == len(self.fonts[self.current_font_index]['charList']) - 1:
+            self.current_char_index = 0
+            self.char_var.set(self.current_char_index)
+            self.draw_character()
+        else:
+            messagebox.showerror("Invalid Index", f"Unknown Error")
     
     def previous_character(self):
         if self.current_char_index > 0:
             self.current_char_index -= 1
-            self.char_combo.current(self.current_char_index)
+            self.char_var.set(self.current_char_index)
             self.draw_character()
+        elif self.current_char_index == 0:
+            self.current_char_index = len(self.fonts[self.current_font_index]['charList']) - 1
+            self.char_var.set(self.current_char_index)
+            self.draw_character()
+        else:
+            messagebox.showerror("Invalid Index", f"Unknown Error")
+
+    def update_character(self, newIndex):
+        if self.current_char_index >= 0 and newIndex >= 0 and newIndex < len(self.fonts[self.current_font_index]['charList']):
+            self.current_char_index = newIndex
+            self.char_var.set(self.current_char_index)
+            self.draw_character()
+        else:
+            messagebox.showerror("Invalid Index", f"Number you entered must be between 0 and {len(self.fonts[self.current_font_index]['charList']) - 1}")
 
     def next_font(self):
         if self.current_font_index < len(self.fonts) - 1:
@@ -146,5 +176,5 @@ class FontViewerApp:
 
 def runApp(filepath):
     root = tk.Tk()
-    app = FontViewerApp(root, filepath)
+    FontViewerApp(root, filepath)
     root.mainloop()
