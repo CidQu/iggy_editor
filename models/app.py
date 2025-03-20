@@ -53,7 +53,7 @@ class FontViewerApp:
 
 
         # Canvas for drawing
-        self.canvas = tk.Canvas(self.root, bg="white", width=400, height=300) # Adjust the size as needed
+        self.canvas = tk.Canvas(self.root, bg="white", width=500, height=500) # Adjust the size as needed
         self.canvas.grid(row=3, column=0, columnspan=2, padx=5, pady=10)
 
         # Keybindings
@@ -109,13 +109,17 @@ class FontViewerApp:
             # Draw a boundary rectangle according to the normalized coordinate space
             self.canvas.create_rectangle(0, 0, canvas_width, canvas_height, outline="gray")
 
-            # Draw each coordinate as a cross
+            self.canvas.create_line(-1,1,1,1)
+
+            # Draw each coordinate as a cross using an extended canvas area (-0.2 to 1.2)
             for coord in char_data.get('coordinates', []):
-                # Map the coordinate to canvas pixels.
-                x_norm = coord['x']
-                y_norm = coord['y']
-                pixel_x = ((x_norm - a4) / (a3 - a4)) * canvas_width
-                pixel_y = ((a1 - y_norm) / (a1 - a2)) * canvas_height
+                # Use the dot's float value directly (assumed between -0.2 and 1.2)
+                x_val = coord['x']
+                y_val = coord['y']
+                
+                # Map data space [-0.2, 1.2] to canvas pixels
+                pixel_x = ((x_val + 0.2) / 1.4) * canvas_width
+                pixel_y = (((y_val + 1.2) / 1.4) * canvas_height)
 
                 # Determine color based on line_type.
                 if coord['line_type'] == 3:
@@ -125,20 +129,30 @@ class FontViewerApp:
                 else:
                     color = "black"
 
-                cs = 5  # cross size in pixels
-                self.canvas.create_line(pixel_x-cs, pixel_y-cs, pixel_x+cs, pixel_y+cs, fill=color)
-                self.canvas.create_line(pixel_x-cs, pixel_y+cs, pixel_x+cs, pixel_y-cs, fill=color)
+                cs = 2  # cross size in pixels
+                self.canvas.create_line(pixel_x - cs, pixel_y - cs, pixel_x + cs, pixel_y + cs, fill=color)
+                self.canvas.create_line(pixel_x - cs, pixel_y + cs, pixel_x + cs, pixel_y - cs, fill=color)
 
-                # If this coordinate is curved, draw its control point.
+                # If this coordinate is curved, draw its control cross.
                 if coord['line_type'] == 3:
                     curved_x = coord.get('curved_x')
                     curved_y = coord.get('curved_y')
-                    if curved_x is not 0.0 and curved_y is not 0.0:
-                        pixel_cx = ((curved_x - a4) / (a3 - a4)) * canvas_width
-                        pixel_cy = ((a1 - curved_y) / (a1 - a2)) * canvas_height
-                        self.canvas.create_line(pixel_cx-cs, pixel_cy-cs, pixel_cx+cs, pixel_cy+cs, fill=color)
-                        self.canvas.create_line(pixel_cx-cs, pixel_cy+cs, pixel_cx+cs, pixel_cy-cs, fill=color)
+                    if curved_x != 0.0 or curved_y != 0.0:
+                        pixel_cx = ((curved_x + 0.2) / 1.4) * canvas_width
+                        pixel_cy = ((curved_y + 1.2) / 1.4) * canvas_height
+                        self.canvas.create_line(pixel_cx - cs, pixel_cy - cs, pixel_cx + cs, pixel_cy + cs, fill=color)
+                        self.canvas.create_line(pixel_cx - cs, pixel_cy + cs, pixel_cx + cs, pixel_cy - cs, fill=color)
 
+            # Draw reference lines for x=0 (vertical) and y=0 (horizontal)
+            # For x=0:
+            x0_pixel = ((0 + 0.2) / 1.4) * canvas_width
+            self.canvas.create_line(x0_pixel, 0, x0_pixel, canvas_height, fill="green", dash=(4,2))
+            
+            # For y=0:
+            y0_pixel = canvas_height - ((0 + 0.2) / 1.4) * canvas_height
+            self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
+
+            # I hate how long and ugly this is
             self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data['numChunks']}")
 
         else:
