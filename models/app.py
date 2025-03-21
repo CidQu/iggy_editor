@@ -11,6 +11,8 @@ class FontViewerApp:
         #self.root.geometry("600x400")
 
         self.file_path = file_path
+        self.show_points = False
+        self.show_bounds = False
         self.parsed_data = parse_file(self.file_path)
         self.current_font_index = 0
         self.current_char_index = 0
@@ -61,6 +63,8 @@ class FontViewerApp:
         self.root.bind("<Left>", lambda _: self.previous_character())
         self.root.bind("<Down>", lambda _: self.next_font())
         self.root.bind("<Up>", lambda _: self.previous_font())
+        self.root.bind("p", lambda _: self.toggle_points())
+        self.root.bind("b", lambda _: self.toggle_bounds())
 
         # Status Bar (for showing current character/font info)
         self.status_bar = ttk.Label(self.root, text="", anchor="w")
@@ -71,7 +75,9 @@ class FontViewerApp:
                                                     "right: next character\n"
                                                     "left:  previous character\n"
                                                     "down:  next font\n"
-                                                    "up: show/hide points and width")
+                                                    "up: show/hide points and width\n"
+                                                    "p: show/hide points\n"
+                                                    "b: show/hide bounds\n")
         self.keyboard_commands.grid(row=5, column=0, columnspan=1)
 
     def load_font_data(self, _event=None):
@@ -111,13 +117,20 @@ class FontViewerApp:
 
             self.canvas.create_line(-1,1,1,1)
 
+            out_of_bounds = False
+
             # Draw each coordinate as a cross using an extended canvas area (-0.2 to 1.2)
             for coord in char_data.get('coordinates', []):
                 # Use the dot's float value directly (assumed between -0.2 and 1.2)
+                # This assume is wrong but I don't know how to fix it
                 x_val = coord['x']
                 y_val = coord['y']
                 prev_x = 0.0
                 prev_y = 0.0
+
+                if (y_val < a2 or y_val > a4) or (x_val < a1 or x_val > a3):
+                    print(f"Out of bounds: {x_val}, {y_val}")
+                    out_of_bounds = True
 
                 if char_data['coordinates'].index(coord) > 0:
                     # Get previus point
@@ -139,8 +152,9 @@ class FontViewerApp:
                     color = "black"
 
                 cs = 2  # cross size in pixels
-                self.canvas.create_line(pixel_x - cs, pixel_y - cs, pixel_x + cs, pixel_y + cs, fill=color)
-                self.canvas.create_line(pixel_x - cs, pixel_y + cs, pixel_x + cs, pixel_y - cs, fill=color)
+                if self.show_points:
+                    self.canvas.create_line(pixel_x - cs, pixel_y - cs, pixel_x + cs, pixel_y + cs, fill=color)
+                    self.canvas.create_line(pixel_x - cs, pixel_y + cs, pixel_x + cs, pixel_y - cs, fill=color)
                 # For debugging, show the index of the coordinate in the list
                 # self.canvas.create_text(pixel_x + 10, pixel_y + 10, text=f"{char_data['coordinates'].index(coord)}", fill=color)
 
@@ -157,8 +171,9 @@ class FontViewerApp:
                         pixel_cy = ((curved_y + 1.2) / 1.4) * canvas_height
 
                         # Cross
-                        self.canvas.create_line(pixel_cx - cs, pixel_cy - cs, pixel_cx + cs, pixel_cy + cs, fill=color)
-                        self.canvas.create_line(pixel_cx - cs, pixel_cy + cs, pixel_cx + cs, pixel_cy - cs, fill=color)
+                        if self.show_points:
+                            self.canvas.create_line(pixel_cx - cs, pixel_cy - cs, pixel_cx + cs, pixel_cy + cs, fill=color)
+                            self.canvas.create_line(pixel_cx - cs, pixel_cy + cs, pixel_cx + cs, pixel_cy - cs, fill=color)
 
                         # Curved Line
                         self.canvas.create_line(prev_x, prev_y, pixel_cx, pixel_cy, pixel_x, pixel_y, smooth=True, splinesteps=36, fill=color)
@@ -173,17 +188,23 @@ class FontViewerApp:
             self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
 
             # Draw the character's bounding box
-            a_2 = ((a2 + 1.2) / 1.4) * canvas_width # Y AXIS
-            a_4 = ((a4 + 1.2) / 1.4) * canvas_height # Y AXIS
+            a_2 = ((a2 + 1.2) / 1.4) * canvas_width # Y + AXIS
+            a_4 = ((a4 + 1.2) / 1.4) * canvas_height # Y - AXIS
 
-            a_1 = ((a1 + 0.2) / 1.4) * canvas_width # X AXIS
-            a_3 = ((a3 + 0.2) / 1.4) * canvas_height # X AXIS
+            a_1 = ((a1 + 0.2) / 1.4) * canvas_width # X + AXIS
+            a_3 = ((a3 + 0.2) / 1.4) * canvas_height # X - AXIS
 
-            self.canvas.create_line(0, a_4, canvas_width, a_4, fill="purple") # Y AXIS
-            self.canvas.create_line(0, a_2, canvas_width, a_2, fill="purple") # Y AXIS
+            if self.show_bounds:
+                # Y's
+                self.canvas.create_line(0, a_4, canvas_width, a_4, fill="purple")
+                self.canvas.create_line(0, a_2, canvas_width, a_2, fill="purple")
 
-            self.canvas.create_line(a_1, 0, a_1, canvas_height, fill="purple") # X AXIS
-            self.canvas.create_line(a_3, 0, a_3, canvas_height, fill="purple") # X AXIS
+                # X's
+                self.canvas.create_line(a_1, 0, a_1, canvas_height, fill="purple")
+                self.canvas.create_line(a_3, 0, a_3, canvas_height, fill="purple")
+            
+            if out_of_bounds:
+                messagebox.showerror("Invalid Bounds", f"Out of bounds: {x_val}, {y_val}")
 
             # I hate how long and ugly this is
             self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data['numChunks']}")
@@ -236,6 +257,14 @@ class FontViewerApp:
             self.font_combo.current(self.current_font_index)
             self.load_font_data()
             self.draw_character()
+
+    def toggle_points(self):
+        self.show_points = not self.show_points
+        self.draw_character()
+    
+    def toggle_bounds(self):
+        self.show_bounds = not self.show_bounds
+        self.draw_character()
 
 def runApp(filepath):
     root = tk.Tk()
