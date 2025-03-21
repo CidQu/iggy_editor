@@ -116,6 +116,14 @@ class FontViewerApp:
                 # Use the dot's float value directly (assumed between -0.2 and 1.2)
                 x_val = coord['x']
                 y_val = coord['y']
+                prev_x = 0.0
+                prev_y = 0.0
+
+                if char_data['coordinates'].index(coord) > 0:
+                    # Get previus point
+                    previus_coordinate = char_data['coordinates'][char_data['coordinates'].index(coord) - 1]
+                    prev_x = ((previus_coordinate['x'] + 0.2) / 1.4) * canvas_width
+                    prev_y = ((previus_coordinate['y'] + 1.2) / 1.4) * canvas_height
                 
                 # Map data space [-0.2, 1.2] to canvas pixels
                 pixel_x = ((x_val + 0.2) / 1.4) * canvas_width
@@ -132,6 +140,11 @@ class FontViewerApp:
                 cs = 2  # cross size in pixels
                 self.canvas.create_line(pixel_x - cs, pixel_y - cs, pixel_x + cs, pixel_y + cs, fill=color)
                 self.canvas.create_line(pixel_x - cs, pixel_y + cs, pixel_x + cs, pixel_y - cs, fill=color)
+                # For debugging, show the index of the coordinate in the list
+                # self.canvas.create_text(pixel_x + 10, pixel_y + 10, text=f"{char_data['coordinates'].index(coord)}", fill=color)
+
+                if coord['line_type'] != 1:
+                    self.canvas.create_line(prev_x, prev_y, pixel_x, pixel_y, fill=color)
 
                 # If this coordinate is curved, draw its control cross.
                 if coord['line_type'] == 3:
