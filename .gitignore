@@ -162,3 +162,4 @@ cython_debug/
 # Legal Stuff
 *.iggy
 *.json
+.DS_Store
