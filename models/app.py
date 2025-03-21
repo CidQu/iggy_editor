@@ -172,6 +172,19 @@ class FontViewerApp:
             y0_pixel = canvas_height - ((0 + 0.2) / 1.4) * canvas_height
             self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
 
+            # Draw the character's bounding box
+            a_2 = ((a2 + 1.2) / 1.4) * canvas_width # Y AXIS
+            a_4 = ((a4 + 1.2) / 1.4) * canvas_height # Y AXIS
+
+            a_1 = ((a1 + 0.2) / 1.4) * canvas_width # X AXIS
+            a_3 = ((a3 + 0.2) / 1.4) * canvas_height # X AXIS
+
+            self.canvas.create_line(0, a_4, canvas_width, a_4, fill="purple") # Y AXIS
+            self.canvas.create_line(0, a_2, canvas_width, a_2, fill="purple") # Y AXIS
+
+            self.canvas.create_line(a_1, 0, a_1, canvas_height, fill="purple") # X AXIS
+            self.canvas.create_line(a_3, 0, a_3, canvas_height, fill="purple") # X AXIS
+
             # I hate how long and ugly this is
             self.status_bar.config(text=f"Font: {self.font_combo.get()}\nChar: {char_data['keycodeValue']} ({convert_bytes_to_hex(char_data['keycodeValue'].encode('utf-16le'))})\nIndex: {self.current_char_index} / {len(font['charList'])-1}\nNumber of Coordinates: {char_data['numChunks']}")
 
