@@ -121,6 +121,7 @@ class FontViewerApp:
 
                 if char_data['coordinates'].index(coord) > 0:
                     # Get previus point
+                    # This is a bit weird, but it works for now
                     previus_coordinate = char_data['coordinates'][char_data['coordinates'].index(coord) - 1]
                     prev_x = ((previus_coordinate['x'] + 0.2) / 1.4) * canvas_width
                     prev_y = ((previus_coordinate['y'] + 1.2) / 1.4) * canvas_height
@@ -143,7 +144,8 @@ class FontViewerApp:
                 # For debugging, show the index of the coordinate in the list
                 # self.canvas.create_text(pixel_x + 10, pixel_y + 10, text=f"{char_data['coordinates'].index(coord)}", fill=color)
 
-                if coord['line_type'] != 1:
+                if coord['line_type'] == 2:
+                    # Draw a line from the previous point to this point
                     self.canvas.create_line(prev_x, prev_y, pixel_x, pixel_y, fill=color)
 
                 # If this coordinate is curved, draw its control cross.
@@ -153,8 +155,13 @@ class FontViewerApp:
                     if curved_x != 0.0 or curved_y != 0.0:
                         pixel_cx = ((curved_x + 0.2) / 1.4) * canvas_width
                         pixel_cy = ((curved_y + 1.2) / 1.4) * canvas_height
+
+                        # Cross
                         self.canvas.create_line(pixel_cx - cs, pixel_cy - cs, pixel_cx + cs, pixel_cy + cs, fill=color)
                         self.canvas.create_line(pixel_cx - cs, pixel_cy + cs, pixel_cx + cs, pixel_cy - cs, fill=color)
+
+                        # Curved Line
+                        self.canvas.create_line(prev_x, prev_y, pixel_cx, pixel_cy, pixel_x, pixel_y, smooth=True, splinesteps=36, fill=color)
 
             # Draw reference lines for x=0 (vertical) and y=0 (horizontal)
             # For x=0:
