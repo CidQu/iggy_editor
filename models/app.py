@@ -13,6 +13,7 @@ class FontViewerApp:
         self.file_path = file_path
         self.show_points = False
         self.show_bounds = False
+        self.align_to_origin = False
         self.parsed_data = parse_file(self.file_path)
         self.current_font_index = 0
         self.current_char_index = 0
@@ -65,6 +66,7 @@ class FontViewerApp:
         self.root.bind("<Up>", lambda _: self.previous_font())
         self.root.bind("p", lambda _: self.toggle_points())
         self.root.bind("b", lambda _: self.toggle_bounds())
+        self.root.bind("a", lambda _: self.toggle_align_to_origin())
 
         # Status Bar (for showing current character/font info)
         self.status_bar = ttk.Label(self.root, text="", anchor="w")
@@ -111,6 +113,9 @@ class FontViewerApp:
             a4 = char_data.get('a4')
             canvas_width = self.canvas.winfo_width()
             canvas_height = self.canvas.winfo_height()
+            canvas_padding_x = 0.6
+            canvas_padding_y = 1.3
+            canvas_all = 2.0
 
             # Draw a boundary rectangle according to the normalized coordinate space
             self.canvas.create_rectangle(0, 0, canvas_width, canvas_height, outline="gray")
@@ -119,14 +124,16 @@ class FontViewerApp:
 
             out_of_bounds = False
 
-            # Draw each coordinate as a cross using an extended canvas area (-0.2 to 1.2)
             for coord in char_data.get('coordinates', []):
-                # Use the dot's float value directly (assumed between -0.2 and 1.2)
-                # This assume is wrong but I don't know how to fix it
                 x_val = coord['x']
                 y_val = coord['y']
                 prev_x = 0.0
                 prev_y = 0.0
+
+                if self.align_to_origin:
+                    canvas_padding_x = 0.2
+                    canvas_padding_y = 1.2
+                    canvas_all = 1.4
 
                 if (y_val < a2 or y_val > a4) or (x_val < a1 or x_val > a3):
                     print(f"Out of bounds: {x_val}, {y_val}")
@@ -136,12 +143,12 @@ class FontViewerApp:
                     # Get previus point
                     # This is a bit weird, but it works for now
                     previus_coordinate = char_data['coordinates'][char_data['coordinates'].index(coord) - 1]
-                    prev_x = ((previus_coordinate['x'] + 0.2) / 1.4) * canvas_width
-                    prev_y = ((previus_coordinate['y'] + 1.2) / 1.4) * canvas_height
+                    prev_x = ((previus_coordinate['x'] + canvas_padding_x) / canvas_all) * canvas_width
+                    prev_y = ((previus_coordinate['y'] + canvas_padding_y) / canvas_all) * canvas_height
                 
                 # Map data space [-0.2, 1.2] to canvas pixels
-                pixel_x = ((x_val + 0.2) / 1.4) * canvas_width
-                pixel_y = (((y_val + 1.2) / 1.4) * canvas_height)
+                pixel_x = ((x_val + canvas_padding_x) / canvas_all) * canvas_width
+                pixel_y = (((y_val + canvas_padding_y) / canvas_all) * canvas_height)
 
                 # Determine color based on line_type.
                 if coord['line_type'] == 3:
@@ -167,8 +174,8 @@ class FontViewerApp:
                     curved_x = coord.get('curved_x')
                     curved_y = coord.get('curved_y')
                     if curved_x != 0.0 or curved_y != 0.0:
-                        pixel_cx = ((curved_x + 0.2) / 1.4) * canvas_width
-                        pixel_cy = ((curved_y + 1.2) / 1.4) * canvas_height
+                        pixel_cx = ((curved_x + canvas_padding_x) / canvas_all) * canvas_width
+                        pixel_cy = ((curved_y + canvas_padding_y) / canvas_all) * canvas_height
 
                         # Cross
                         if self.show_points:
@@ -178,21 +185,25 @@ class FontViewerApp:
                         # Curved Line
                         self.canvas.create_line(prev_x, prev_y, pixel_cx, pixel_cy, pixel_x, pixel_y, smooth=True, splinesteps=36, fill=color)
 
-            # Draw reference lines for x=0 (vertical) and y=0 (horizontal)
-            # For x=0:
-            x0_pixel = ((0 + 0.2) / 1.4) * canvas_width
-            self.canvas.create_line(x0_pixel, 0, x0_pixel, canvas_height, fill="green", dash=(4,2))
-            
-            # For y=0:
-            y0_pixel = canvas_height - ((0 + 0.2) / 1.4) * canvas_height
-            self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
+            if self.align_to_origin:
+                # Draw reference lines for x=0 (vertical) and y=0 (horizontal)
+                # For x=0:
+                x0_pixel = ((0 + canvas_padding_x) / canvas_all) * canvas_width
+                self.canvas.create_line(x0_pixel, 0, x0_pixel, canvas_height, fill="green", dash=(4,2))
+                
+                # For y=0:
+                y0_pixel = ((0 + canvas_padding_y) / canvas_all) * canvas_height
+                self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
+            else:
+                y0_pixel = ((0 + canvas_padding_y) / canvas_all) * canvas_height
+                self.canvas.create_line(0, y0_pixel, canvas_width, y0_pixel, fill="green", dash=(4,2))
 
             # Draw the character's bounding box
-            a_2 = ((a2 + 1.2) / 1.4) * canvas_width # Y + AXIS
-            a_4 = ((a4 + 1.2) / 1.4) * canvas_height # Y - AXIS
+            a_2 = ((a2 + canvas_padding_y) / canvas_all) * canvas_width # Y + AXIS
+            a_4 = ((a4 + canvas_padding_y) / canvas_all) * canvas_height # Y - AXIS
 
-            a_1 = ((a1 + 0.2) / 1.4) * canvas_width # X + AXIS
-            a_3 = ((a3 + 0.2) / 1.4) * canvas_height # X - AXIS
+            a_1 = ((a1 + canvas_padding_x) / canvas_all) * canvas_width # X + AXIS
+            a_3 = ((a3 + canvas_padding_x) / canvas_all) * canvas_height # X - AXIS
 
             if self.show_bounds:
                 # Y's
@@ -264,6 +275,10 @@ class FontViewerApp:
     
     def toggle_bounds(self):
         self.show_bounds = not self.show_bounds
+        self.draw_character()
+
+    def toggle_align_to_origin(self):
+        self.align_to_origin = not self.align_to_origin
         self.draw_character()
 
 def runApp(filepath):
