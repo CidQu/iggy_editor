@@ -124,11 +124,12 @@ class FontViewerApp:
 
             out_of_bounds = False
 
+            prev_x = 0.0
+            prev_y = 0.0
+
             for coord in char_data.get('coordinates', []):
                 x_val = coord['x']
                 y_val = coord['y']
-                prev_x = 0.0
-                prev_y = 0.0
 
                 if self.align_to_origin:
                     canvas_padding_x = 0.2
@@ -139,13 +140,6 @@ class FontViewerApp:
                     print(f"Out of bounds: {x_val}, {y_val}")
                     out_of_bounds = True
 
-                if char_data['coordinates'].index(coord) > 0:
-                    # Get previus point
-                    # This is a bit weird, but it works for now
-                    previus_coordinate = char_data['coordinates'][char_data['coordinates'].index(coord) - 1]
-                    prev_x = ((previus_coordinate['x'] + canvas_padding_x) / canvas_all) * canvas_width
-                    prev_y = ((previus_coordinate['y'] + canvas_padding_y) / canvas_all) * canvas_height
-                
                 # Map data space [-0.2, 1.2] to canvas pixels
                 pixel_x = ((x_val + canvas_padding_x) / canvas_all) * canvas_width
                 pixel_y = (((y_val + canvas_padding_y) / canvas_all) * canvas_height)
@@ -184,6 +178,9 @@ class FontViewerApp:
 
                         # Curved Line
                         self.canvas.create_line(prev_x, prev_y, pixel_cx, pixel_cy, pixel_x, pixel_y, smooth=True, splinesteps=36, fill=color)
+
+                prev_x = pixel_x
+                prev_y = pixel_y
 
             if self.align_to_origin:
                 # Draw reference lines for x=0 (vertical) and y=0 (horizontal)
